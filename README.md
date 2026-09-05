@@ -82,6 +82,8 @@ talkoda render --source ./my-song/song.strudel.js --output ./my-song/song.mp3 --
 
 未找到 Chrome/Chromium 时运行 `talkoda render setup` 下载 Chromium。已有系统 Chrome 会自动检测，也可使用 `--browser PATH` 或 `TALKODA_BROWSER`。Linux 可能需要 [Playwright 系统依赖](https://playwright.dev/docs/browsers#install-system-dependencies)；从仓库运行 `npx playwright install --with-deps chromium` 安装。保留浏览器沙箱，CLI 不提供关闭沙箱的开关。
 
+Ubuntu 等启用 AppArmor 限制的系统，优先使用系统安装的 Google Chrome；CLI 在 Linux 上会优先检测它。下载版 Chromium 可能需要额外的沙箱配置，详见 [Chromium 官方说明](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md)。
+
 只渲染你在当前任务中编写或审阅过的源码。临时渲染上下文并不是任意恶意 JavaScript 的通用安全沙箱；源码不会在已登录的 Talkoda 网站或 Node.js 中执行。
 
 ## 登录与发布
