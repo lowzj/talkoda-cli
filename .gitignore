@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+test-results/
+*.tgz
+.DS_Store
+.env
+.env.*
+.private/
+.local/

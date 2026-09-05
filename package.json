@@ -1,0 +1,49 @@
+{
+  "name": "@talkoda/cli",
+  "version": "0.2.0",
+  "description": "The command-line client for Talkoda conversation music.",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "bin": {
+    "talkoda": "bin/talkoda.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md",
+    "LICENSE",
+    "skills"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "check": "eslint . && vitest run",
+    "render:setup": "playwright install chromium",
+    "pack:release": "node scripts/pack-release.mjs"
+  },
+  "dependencies": {
+    "@breezystack/lamejs": "1.2.7",
+    "@strudel/web": "1.3.0",
+    "playwright": "1.63.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "eslint": "10.10.0",
+    "music-metadata": "11.15.0",
+    "prettier": "3.9.6",
+    "typescript-eslint": "8.69.0",
+    "vitest": "4.1.11"
+  },
+  "pi": {
+    "skills": [
+      "./skills/talkoda"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lowzj/talkoda-cli.git"
+  }
+}
