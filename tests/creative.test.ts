@@ -18,6 +18,7 @@ async function run(args: string[]) {
         LC_ALL: 'zh_CN.UTF-8',
         TALKODA_API_TOKEN: 'not-a-valid-token',
         TALKODA_CONFIG_FILE: join(directory, 'invalid-config.json'),
+        TALKODA_HOME: join(directory, 'talkoda-home'),
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -42,6 +43,43 @@ afterEach(async () => {
 })
 
 describe('portable agent workflow', () => {
+  it('creates separate named workspaces under Talkoda home when output is omitted', async () => {
+    await writeFile(join(directory, 'chat.md'), 'A private conversation')
+    const first = await run(['compose', 'init', '--conversation', 'chat.md', '--title', '再试一次'])
+    expect(first.code, first.stderr).toBe(0)
+    const result = JSON.parse(first.stdout)
+    expect(result.directory).toBe(join(directory, 'talkoda-home/songs/再试一次'))
+    expect(await readFile(result.brief, 'utf8')).toContain(result.directory)
+    expect(await readFile(result.brief, 'utf8')).toContain('talkoda play song.mp3')
+    expect((await stat(result.directory)).mode & 0o777).toBe(0o700)
+    const second = await run([
+      'compose',
+      'init',
+      '--conversation',
+      'chat.md',
+      '--title',
+      '再试一次',
+    ])
+    expect(second.code, second.stderr).toBe(0)
+    expect(JSON.parse(second.stdout).directory).toBe(
+      join(directory, 'talkoda-home/songs/再试一次-2'),
+    )
+    const named = await run([
+      'compose',
+      'init',
+      '--conversation',
+      'chat.md',
+      '--title',
+      'Song title',
+      '--name',
+      '独立作品',
+    ])
+    expect(named.code, named.stderr).toBe(0)
+    expect(JSON.parse(named.stdout).directory).toBe(join(directory, 'talkoda-home/songs/独立作品'))
+    const unnamed = await run(['compose', 'init', '--conversation', 'chat.md'])
+    expect(unnamed.code, unnamed.stderr).toBe(0)
+    expect(JSON.parse(unnamed.stdout).directory).toBe(join(directory, 'talkoda-home/songs/chat'))
+  })
   it('respects custom pi and OpenCode user directories without changing project locations', () => {
     const paths = {
       userDirectory: '/test-user',

@@ -29,12 +29,17 @@ const helpZh = `Talkoda CLI — 把对话，谱成歌。
 skills install --agent codex|claude|pi|opencode [--scope user|project] [--force]
                                   安装会话作曲与发布技能
 skills show                       输出通用技能说明
-compose init --conversation FILE --output DIRECTORY [--title TITLE --bpm 108 --cycles 64]
-                                  准备本地创作工作区，由当前 AI 完成作曲
+compose init --conversation FILE [--name NAME --output DIRECTORY --title TITLE --bpm 108 --cycles 64]
+                                  默认新建 ~/.talkoda/songs/NAME，由当前 AI 完成作曲
 render doctor                     检查独立音频渲染环境
 render setup                      安装 Chromium（已有 Chrome 时通常不需要）
 render --source FILE --output FILE.mp3 --bpm N --cycles N [--browser PATH]
                                   离线渲染 Strudel 为 MP3，使用内置合成器
+play FILE [--player auto|afplay|ffplay|mpv]
+                                  在终端播放本地 MP3/M4A/WAV，Ctrl-C 停止
+play --track ID [--player auto|afplay|ffplay|mpv]
+                                  通过 API 下载有权限的作品后播放
+play doctor                       检查终端播放器
 
 auth login                         输入 Token 并安全保存（输入不回显）
   --token-stdin | --token-file PATH 自动化输入方式
@@ -75,7 +80,8 @@ favorites add|remove ID            收藏 / 取消收藏
           --tags "标签1,标签2" --copyright-notice TEXT
 compose init 也支持以上生成来源、可见性、标签与版权资料选项。
 通用选项: --lang en|zh（默认系统语言） --url ORIGIN --json --help --version
-环境变量: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_CONFIG_FILE
+环境变量: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_HOME, TALKODA_CONFIG_FILE
+默认根目录: ~/.talkoda；配置文件: ~/.talkoda/config.json
 默认地址: https://talkoda.com
 源码默认公开，提示词默认私密。未提供的资料字段保持原值。
 上传默认保存草稿。Token 不会作为 URL 参数发送，也不会转发到重定向地址。`
@@ -87,12 +93,17 @@ Usage: talkoda <command> [options]
 skills install --agent codex|claude|pi|opencode [--scope user|project] [--force]
                                   Install the conversation composition/publishing skill
 skills show                       Print the portable skill instructions
-compose init --conversation FILE --output DIRECTORY [--title TITLE --bpm 108 --cycles 64]
-                                  Prepare a local workspace for your AI to compose
+compose init --conversation FILE [--name NAME --output DIRECTORY --title TITLE --bpm 108 --cycles 64]
+                                  Create a fresh workspace in ~/.talkoda/songs/NAME by default
 render doctor                     Check the isolated audio renderer
 render setup                      Install Chromium if Chrome is unavailable
 render --source FILE --output FILE.mp3 --bpm N --cycles N [--browser PATH]
                                   Render Strudel offline with built-in synthesizers
+play FILE [--player auto|afplay|ffplay|mpv]
+                                  Play a local MP3/M4A/WAV in the terminal; Ctrl-C stops
+play --track ID [--player auto|afplay|ffplay|mpv]
+                                  Download an accessible track via the API and play it
+play doctor                       Check available terminal audio players
 
 auth login                        Save a Token securely with hidden input
   --token-stdin | --token-file PATH Automation input options
@@ -133,7 +144,8 @@ Metadata: --title --summary --summary-file --genre --cover blue|mint|peach|viole
           --tags "tag1,tag2" --copyright-notice TEXT
 compose init also accepts the generation, visibility, tags and copyright metadata above.
 Global options: --lang en|zh (system locale by default) --url ORIGIN --json --help --version
-Environment: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_CONFIG_FILE
+Environment: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_HOME, TALKODA_CONFIG_FILE
+Default home: ~/.talkoda; configuration: ~/.talkoda/config.json
 Default server: https://talkoda.com
 Source is public and prompts private by default. Unspecified metadata is preserved.
 Uploads default to drafts. Tokens never appear in URLs or follow redirects.`
@@ -148,6 +160,8 @@ const stringOptions = [
   'conversation',
   'cycles',
   'browser',
+  'player',
+  'track',
   'url',
   'token-file',
   'name',
@@ -220,6 +234,11 @@ async function main() {
   }
   if (flags.help || !args.length) {
     console.log(getLanguage() === 'zh' ? helpZh : helpEn)
+    return
+  }
+  if (args[0] === 'play') {
+    const { playbackCommand } = await import('../lib/playback.mjs')
+    await playbackCommand(args, flags)
     return
   }
   if (['skills', 'compose', 'render'].includes(args[0])) {

@@ -6,7 +6,15 @@ Run `talkoda --help` for the complete command list. Results are JSON; `--json` m
 
 `talkoda auth login` accepts a Token with hidden input. Automation can use `--token-file FILE`, `--token-stdin`, or an externally injected `TALKODA_API_TOKEN`. `talkoda auth status` checks identity. `auth logout` revokes the active Token and clears the saved login. Never print or share a user's credential file.
 
-Credentials are saved per origin in `~/.config/talkoda/config.json` with mode 0600 (or under `XDG_CONFIG_HOME`). `TALKODA_CONFIG_FILE` chooses another file. `--url` / `TALKODA_API_URL` select the server; default is `https://talkoda.com`. HTTPS is required except for local loopback development. API redirects are rejected.
+Credentials are saved per origin in `~/.talkoda/config.json` with mode 0600. `TALKODA_HOME` overrides the root; without explicit overrides, an absent new config can migrate the previous `~/.config/talkoda/config.json` (or old XDG path) without overwriting a new file. `TALKODA_CONFIG_FILE` chooses another file. `--url` / `TALKODA_API_URL` select the server; default is `https://talkoda.com`. HTTPS is required except for local loopback development. API redirects are rejected.
+
+## Workspaces and playback
+
+`compose init --conversation FILE [--name NAME]` creates a fresh `~/.talkoda/songs/{name}` directory. Repeated names use a suffix; always use the returned JSON `directory`. Explicit `--output PATH` preserves the caller's chosen location and must not already exist. Do not reuse another song's workspace for a new creation.
+
+`talkoda play FILE [--player auto|afplay|ffplay|mpv]` plays local MP3/M4A/WAV audio. `play doctor` reports installed backends; macOS auto-prefers afplay, then ffplay/mpv, other platforms use ffplay/mpv. Ctrl-C stops playback (exit 130). Audio output belongs to the machine running the process. A successful exit does not establish that the Agent listened.
+
+`talkoda play --track ID` downloads accessible audio through the API, keeps credentials out of the player arguments/environment, and removes the private temporary audio after completion or interruption. It accepts no arbitrary URLs and does not increment play counts automatically; external process timing is insufficient evidence of real audio progress. Transient playback/render files use `~/.talkoda/cache`.
 
 ## Tracks and interaction
 
