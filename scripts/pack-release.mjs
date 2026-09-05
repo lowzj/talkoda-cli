@@ -12,6 +12,8 @@ const expected = new Set([
   'README.md',
   'bin/talkoda.mjs',
   'lib/client.mjs',
+  'lib/i18n.mjs',
+  'lib/metadata.mjs',
   'lib/creative.mjs',
   'lib/render.mjs',
   'skills/talkoda/SKILL.md',

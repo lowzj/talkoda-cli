@@ -14,11 +14,13 @@ let requests: {
   method: string
   authorization?: string
   origin?: string
+  language?: string
   body: unknown
 }[]
 let failUpload = false,
   redirect = false,
-  failTokenCreation = false
+  failTokenCreation = false,
+  privateSource = false
 const track = {
   id: 'song-1',
   title: '原始标题',
@@ -39,6 +41,7 @@ async function run(args: string[], { input = '', token = credential } = {}) {
         cwd: directory,
         env: {
           ...process.env,
+          LC_ALL: 'zh_CN.UTF-8',
           TALKODA_API_URL: origin,
           TALKODA_API_TOKEN: token,
           TALKODA_CONFIG_FILE: join(directory, 'config.json'),
@@ -86,6 +89,7 @@ beforeAll(async () => {
       method: request.method!,
       authorization: request.headers.authorization,
       origin: request.headers.origin,
+      language: request.headers['accept-language'],
       body,
     })
     response.setHeader('Content-Type', 'application/json')
@@ -104,6 +108,15 @@ beforeAll(async () => {
       return
     }
     if (url.pathname.endsWith('/media/audio') || url.pathname.endsWith('/media/source')) {
+      if (privateSource && url.pathname.endsWith('/media/source')) {
+        response.writeHead(403)
+        response.end(
+          JSON.stringify({
+            error: request.headers['accept-language'] === 'zh' ? '源码为私密' : 'Source is private',
+          }),
+        )
+        return
+      }
       response.setHeader('Content-Type', 'application/octet-stream')
       response.setHeader('Content-Length', '3')
       if (request.headers.range) {
@@ -120,6 +133,8 @@ beforeAll(async () => {
         tracks: [{ ...track, id: `song-${url.searchParams.get('page')}` }],
         hasMore: url.searchParams.get('page') !== '2',
       }
+    if (url.pathname === '/api/tags') result = { tags: [{ tag: 'lo-fi', count: 2 }] }
+    if (url.pathname.endsWith('/plays')) result = { counted: true, playCount: 3 }
     if (url.pathname === '/api/library') result = { tracks: [track], hasMore: false }
     if (url.pathname === '/api/tracks' && request.method === 'POST') {
       response.statusCode = 201
@@ -158,6 +173,8 @@ beforeEach(async () => {
   failUpload = false
   redirect = false
   failTokenCreation = false
+  privateSource = false
+  track.status = 'draft'
 })
 afterEach(async () => {
   await rm(directory, { recursive: true, force: true })
@@ -288,13 +305,8 @@ describe('CLI operations', () => {
   })
   it('preserves existing metadata on partial edits and can resume an upload without creating another draft', async () => {
     expect((await run(['tracks', 'update', 'song-1', '--title', '新标题'])).code).toBe(0)
-    expect(requests[1]!.body).toMatchObject({
-      title: '新标题',
-      summary: track.summary,
-      cover: track.cover,
-      bpm: 108,
-      engineVersion: '1.3.0',
-    })
+    expect(requests).toHaveLength(1)
+    expect(requests[0]).toMatchObject({ method: 'PATCH', body: { title: '新标题' } })
     await writeFile(join(directory, 'song.js'), 'note("c4")')
     await writeFile(join(directory, 'song.m4a'), new Uint8Array([1, 2, 3]))
     failUpload = true
@@ -371,5 +383,214 @@ describe('CLI operations', () => {
       { status: 'unpublished' },
       { status: 'hidden' },
     ])
+  })
+})
+
+describe('community metadata and language', () => {
+  it('sends only supplied metadata, normalizes tags and keeps prompt input explicit', async () => {
+    await writeFile(join(directory, 'prompt.txt'), 'Compose a warm reprise.\nKeep the ending open.')
+    const result = await run([
+      'tracks',
+      'update',
+      'song-1',
+      '--agent',
+      'Codex',
+      '--model',
+      'known-model',
+      '--tokens',
+      '1234',
+      '--source-visibility',
+      'private',
+      '--prompt-visibility',
+      'private',
+      '--prompt-file',
+      'prompt.txt',
+      '--tags',
+      ' #ＬＯ－ＦＩ, lo-fi , #Warm   Night',
+      '--copyright-notice',
+      'Original composition by Alice',
+    ])
+    expect(result.code, result.stderr).toBe(0)
+    expect(requests).toHaveLength(1)
+    expect(requests[0]).toMatchObject({
+      method: 'PATCH',
+      path: '/api/tracks/song-1',
+      body: {
+        agent: 'Codex',
+        model: 'known-model',
+        tokenCount: 1234,
+        sourceVisibility: 'private',
+        promptVisibility: 'private',
+        prompt: 'Compose a warm reprise.\nKeep the ending open.',
+        tags: ['lo-fi', 'warm night'],
+        copyrightNotice: 'Original composition by Alice',
+      },
+    })
+    expect(requests[0]!.body).not.toHaveProperty('title')
+    expect(requests[0]!.body).not.toHaveProperty('uploadSource')
+    requests = []
+    expect(
+      (
+        await run([
+          'tracks',
+          'update',
+          'song-1',
+          '--tokens',
+          'none',
+          '--tags',
+          '',
+          '--prompt',
+          '',
+          '--copyright-notice',
+          '',
+        ])
+      ).code,
+    ).toBe(0)
+    expect(requests[0]!.body).toEqual({
+      tokenCount: null,
+      tags: [],
+      prompt: null,
+      copyrightNotice: null,
+    })
+  })
+  it('validates metadata and rejects client-supplied upload attribution before making a request', async () => {
+    for (const flags of [
+      ['--tokens', '-1'],
+      ['--tokens', '1.2'],
+      ['--tokens', '9007199254740992'],
+      ['--tokens', ''],
+      ['--source-visibility', 'everyone'],
+      ['--prompt-visibility', 'everyone'],
+      ['--agent', 'a'.repeat(101)],
+      ['--model', 'm'.repeat(121)],
+      ['--prompt', 'p'.repeat(16001)],
+      ['--copyright-notice', 'c'.repeat(1001)],
+      ['--prompt', 'text', '--prompt-file', 'missing.txt'],
+      ['--tags', Array.from({ length: 11 }, (_, i) => `tag-${i}`).join(',')],
+      ['--tags', 'a'.repeat(33)],
+      ['--upload-source', 'forged'],
+    ]) {
+      const result = await run(['tracks', 'create', '--title', 'Example', ...flags])
+      expect(result.code, flags.join(' ')).toBe(1)
+    }
+    expect(requests).toEqual([])
+  })
+  it('filters tracks by normalized tag and queries the tag directory', async () => {
+    expect((await run(['tracks', 'list', '--tag', '#ＬＯ－ＦＩ', '--query', 'warm'])).code).toBe(0)
+    const url = new URL(requests[0]!.path, origin)
+    expect(url.searchParams.get('tag')).toBe('lo-fi')
+    expect(url.searchParams.get('q')).toBe('warm')
+    const result = await run(['tags', 'list', '--query', 'lo'])
+    expect(result.code, result.stderr).toBe(0)
+    expect(requests.at(-1)!.path).toBe('/api/tags?q=lo')
+    expect(JSON.parse(result.stdout)).toEqual({ tags: [{ tag: 'lo-fi', count: 2 }] })
+  })
+  it('reports actual playback only with a token and an explicit stable event ID', async () => {
+    const eventId = '12345678-1234-4234-8234-123456789abc'
+    const result = await run([
+      'tracks',
+      'record-play',
+      'song-1',
+      '--event-id',
+      eventId,
+      '--seconds',
+      '5.25',
+    ])
+    expect(result.code, result.stderr).toBe(0)
+    expect(requests).toHaveLength(1)
+    expect(requests[0]).toMatchObject({
+      method: 'POST',
+      path: '/api/tracks/song-1/plays',
+      body: { eventId, secondsPlayed: 5.25 },
+    })
+    expect(JSON.parse(result.stdout)).toEqual({ counted: true, playCount: 3 })
+    requests = []
+    for (const seconds of ['4.9', 'NaN', 'Infinity'])
+      expect(
+        (
+          await run([
+            'tracks',
+            'record-play',
+            'song-1',
+            '--event-id',
+            eventId,
+            '--seconds',
+            seconds,
+          ])
+        ).code,
+      ).toBe(1)
+    expect(
+      (await run(['tracks', 'record-play', 'song-1', '--event-id', 'invalid', '--seconds', '5']))
+        .code,
+    ).toBe(1)
+    expect(
+      (
+        await run(['tracks', 'record-play', 'song-1', '--event-id', eventId, '--seconds', '5'], {
+          token: '',
+        })
+      ).code,
+    ).toBe(1)
+    expect(requests).toEqual([])
+    expect((await run(['tracks', 'download', 'song-1', '--kind', 'audio', '--head'])).code).toBe(0)
+    expect(requests.map((request) => request.path)).toEqual(['/api/tracks/song-1/media/audio'])
+  })
+  it('returns encoded sharing links without contacting social services', async () => {
+    track.status = 'published'
+    const result = await run(['tracks', 'share', 'song-1'])
+    expect(result.code, result.stderr).toBe(0)
+    const shared = JSON.parse(result.stdout)
+    expect(shared.url).toBe(`${origin}/t/song-1`)
+    const x = new URL(shared.shareUrls.x)
+    expect(x.searchParams.get('url')).toBe(shared.url)
+    expect(x.searchParams.get('text')).toBe(track.title)
+    expect(requests).toHaveLength(1)
+    expect(requests[0]!.method).toBe('GET')
+  })
+  it('keeps non-public titles out of social sharing URLs', async () => {
+    for (const status of ['draft', 'unpublished', 'hidden']) {
+      track.status = status
+      const result = await run(['tracks', 'share', 'song-1'])
+      expect(result.code, result.stderr).toBe(0)
+      expect(JSON.parse(result.stdout)).toEqual({
+        url: `${origin}/t/song-1`,
+        status,
+        shareUrls: {},
+      })
+    }
+  })
+  it('localizes help, local errors and transport headers while preserving JSON and API errors', async () => {
+    const english = await run(['--help', '--lang', 'en'])
+    expect(english.code).toBe(0)
+    expect(english.stdout).toContain('Usage: talkoda')
+    expect(english.stdout).toContain('--source-visibility')
+    expect(english.stdout).not.toMatch(/[\u3400-\u9fff]/u)
+    expect((await run(['--help', '--lang', 'zh'])).stdout).toContain('用法: talkoda')
+    expect((await run(['tracks', 'create', '--lang', 'en'])).stderr).toContain(
+      'Please provide --title',
+    )
+    expect(
+      (await run(['tracks', 'create', '--tokens=-1', '--title', 'example', '--lang', 'en'])).stderr,
+    ).toContain('--tokens must be an integer')
+    expect((await run(['--unknown', '--lang', 'zh'])).stderr).toContain('未知选项')
+    expect((await run(['--help', '--lang', 'fr'])).code).toBe(1)
+    expect((await run(['tracks', 'list', '--lang', 'en'])).code).toBe(0)
+    expect(requests.at(-1)!.language).toBe('en')
+    expect((await run(['tracks', 'list', '--lang', 'zh'])).code).toBe(0)
+    expect(requests.at(-1)!.language).toBe('zh')
+    privateSource = true
+    const denied = await run([
+      'tracks',
+      'download',
+      'song-1',
+      '--kind',
+      'source',
+      '--output',
+      'private.js',
+      '--lang',
+      'en',
+    ])
+    expect(denied.code).toBe(1)
+    expect(denied.stderr).toContain('HTTP 403: Source is private')
+    await expect(stat(join(directory, 'private.js'))).rejects.toMatchObject({ code: 'ENOENT' })
   })
 })

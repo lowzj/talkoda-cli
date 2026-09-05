@@ -15,6 +15,7 @@ async function run(args: string[]) {
       // Creative commands must work without opening or validating account credentials.
       env: {
         ...process.env,
+        LC_ALL: 'zh_CN.UTF-8',
         TALKODA_API_TOKEN: 'not-a-valid-token',
         TALKODA_CONFIG_FILE: join(directory, 'invalid-config.json'),
       },
@@ -125,6 +126,77 @@ describe('portable agent workflow', () => {
         ])
       ).code,
     ).toBe(1)
+  })
+  it('records only supplied generation facts and keeps prompts separate from raw conversations', async () => {
+    await writeFile(join(directory, 'chat.md'), 'Private source conversation')
+    const result = await run([
+      'compose',
+      'init',
+      '--conversation',
+      'chat.md',
+      '--output',
+      'metadata-song',
+      '--agent',
+      'Codex',
+      '--model',
+      'known-model',
+      '--tokens',
+      '456',
+      '--prompt',
+      'Make an instrumental reprise',
+      '--prompt-visibility',
+      'public',
+      '--source-visibility',
+      'private',
+      '--tags',
+      '#Ambient,AMBIENT,warm',
+      '--lang',
+      'en',
+    ])
+    expect(result.code, result.stderr).toBe(0)
+    const metadata = JSON.parse(await readFile(join(directory, 'metadata-song/song.json'), 'utf8'))
+    expect(metadata).toMatchObject({
+      agent: 'Codex',
+      model: 'known-model',
+      tokenCount: 456,
+      sourceVisibility: 'private',
+      promptVisibility: 'public',
+      tags: ['ambient', 'warm'],
+      promptFile: '.private/prompt.txt',
+    })
+    expect(metadata).not.toHaveProperty('prompt')
+    expect(metadata).not.toHaveProperty('uploadSource')
+    expect(await readFile(join(directory, 'metadata-song/.private/prompt.txt'), 'utf8')).toBe(
+      'Make an instrumental reprise',
+    )
+    expect((await stat(join(directory, 'metadata-song/.private/prompt.txt'))).mode & 0o777).toBe(
+      0o600,
+    )
+    expect(await readFile(join(directory, 'metadata-song/BRIEF.md'), 'utf8')).toContain(
+      'Leave unknown values null',
+    )
+    expect(
+      (await run(['compose', 'init', '--conversation', 'chat.md', '--output', 'unknown-song']))
+        .code,
+    ).toBe(0)
+    const unknown = JSON.parse(await readFile(join(directory, 'unknown-song/song.json'), 'utf8'))
+    expect(unknown).toMatchObject({
+      agent: null,
+      model: null,
+      tokenCount: null,
+      promptVisibility: 'private',
+      sourceVisibility: 'public',
+    })
+    expect(unknown).not.toHaveProperty('promptFile')
+    await expect(stat(join(directory, 'unknown-song/.private/prompt.txt'))).rejects.toMatchObject({
+      code: 'ENOENT',
+    })
+  })
+  it('localizes common creative errors without loading API credentials', async () => {
+    expect((await run(['render', '--lang', 'en'])).stderr).toContain('Use render --source')
+    expect(
+      (await run(['skills', 'install', '--agent', 'unknown', '--lang', 'en'])).stderr,
+    ).toContain('Specify --agent')
   })
   it('does not follow transcript symlinks or install through an existing skill symlink', async () => {
     await writeFile(join(directory, 'chat.md'), 'A conversation')
