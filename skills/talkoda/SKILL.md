@@ -27,6 +27,10 @@ For a native conversation already read through the host, write a local creative 
 
 Run the following relative-path commands inside that returned directory. Read [the music guidance](references/music.md) when writing or revising the score. Replace `song.strudel.js` with an original composition grounded in the actual conversation. The starter is an example, not a finished track to upload. Write the public explanation in `story.md`, and keep title/BPM/cycles/genre/cover in `song.json` consistent with the result. Record the actual host `agent`, `model` and verifiable `tokenCount` when available; leave unknown values `null`, never estimate or fabricate usage. Add relevant tags and a copyright notice only when its claims are supported.
 
+**Story length:** `story.md` is uploaded as the API's `summary`. Default to **1200 characters or fewer**, with a **hard maximum of 2000**. This is not a word count: use the file's trimmed JavaScript string `.length` (UTF-16 units), including punctuation, internal spaces and line breaks; most emoji count as two. Keep the motif, meaningful turns and musical mapping, and remove padding. A longer local essay can be kept in a separate file; upload only the short public story.
+
+Before any upload or story update, run `talkoda story check story.md` and inspect `characters` and `valid`. If it exceeds 2000, compress back to the default 1200-character target in one pass and check again; do not repeatedly submit near-limit revisions to probe the API. The checker reads locally without authentication, and the CLI also rejects oversized `--summary`/`--summary-file` before mutation requests. It never silently truncates or rewrites the story.
+
 Raw conversation text, credentials, personal data and private implementation details stay local. Include only material authorized for publication in the title, story and score comments. No conversation file is an upload input. A creative prompt is a separate, user-approved artifact; never automatically upload the conversation as a prompt. `compose init --prompt-file PATH` keeps it in `.private/prompt.txt` and records only `promptFile` in `song.json`. Source visibility defaults to `public`; honor the user's choice of private source. Prompt visibility defaults to `private`, and making it `public` requires an explicit user choice independent of permission to publish the music.
 
 ## Render and verify
@@ -55,6 +59,7 @@ Before uploading, use `talkoda auth status` to confirm the intended account. Eac
 For a user-authorized public release:
 
 ```sh
+talkoda story check ./story.md
 talkoda tracks upload --title '作品标题' --summary-file ./story.md --genre '电子' --cover blue --bpm 108 --engine-version 1.3.0 --source ./song.strudel.js --audio ./song.mp3 --publish
 ```
 

@@ -21,7 +21,7 @@ Replace “publish” with “save as a draft” when you want to review it firs
 Requires Node.js 22.12 or later; Node.js 24 is recommended.
 
 ```sh
-npm install --global https://talkoda.com/cli/talkoda-cli-0.4.0.tgz
+npm install --global https://talkoda.com/cli/talkoda-cli-0.4.1.tgz
 talkoda --version
 ```
 
@@ -63,6 +63,20 @@ talkoda compose init --conversation ./conversation.md --name my-song --bpm 108 -
 Always use the returned JSON `directory`, which may include a collision suffix. `compose init` supplies a starter and a brief; it does not compose a finished song. Ask your Agent to read `BRIEF.md`, rewrite the score and public story, and keep `song.json` consistent. Raw conversations remain in the ignored `.private` directory with private permissions.
 
 For a native conversation already read by the Agent, it can write a private creative brief to a local file and pass that as `--conversation`.
+
+## Public story length
+
+`story.md` is sent as the track's `summary` using `--summary-file`. The default writing target is **1200 characters or fewer**, with a **hard maximum of 2000**; shorter stories are welcome. Keep the motif, meaningful turns, and musical mapping. Store longer private creation notes in a separate local file.
+
+```sh
+talkoda story check ./story.md
+```
+
+The checker defaults to `story.md` in the current directory and runs without credentials or network access. It never rewrites the file. Counting matches the API's `text.trim().length`: UTF-16 units after removing leading/trailing whitespace. Internal spaces, line breaks and punctuation count; most emoji count as two. This is not a word, byte or Unicode-code-point count.
+
+JSON reports `characters`, `target: 1200`, `max: 2000`, `unit: "utf16"`, `withinTarget` and `valid`. Above-target stories up to 2000 remain valid (exit 0). Above 2000 exits 1; compress back toward 1200 in one pass and recheck instead of repeatedly submitting near-limit edits.
+
+Create, update and both new/resumed upload commands also validate `--summary` / `--summary-file` before requests. Oversized text produces an actual-length error without creating drafts, changing tracks, or silently truncating text. Omitting summary preserves it; explicitly empty summary clears it. These limits apply only to the public story/summary, not the original conversation or private prompt.
 
 ## Render and play music in the terminal
 

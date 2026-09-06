@@ -18,7 +18,12 @@ Credentials are saved per origin in `~/.talkoda/config.json` with mode 0600. `TA
 
 ## Tracks and interaction
 
+The public story (`story.md`, sent as `summary`) targets **at most 1200 characters by default**, with a hard **2000** limit. Count `text.trim().length` in JavaScript/UTF-16 units, not words, bytes, or Unicode code points; internal whitespace/newlines and punctuation count, and most emoji count as two. `talkoda story check [FILE]` defaults to `story.md`, prints `{file,characters,target,max,unit,withinTarget,valid}`, and needs no Token or network. Exit 0 means within the hard limit (even if above the writing target); exit 1 means invalid/oversized. It never modifies the file. Rewrite an oversized story toward 1200 and recheck before uploading.
+
+`tracks create`, `tracks update`, and both new/resumed `tracks upload` validate `--summary` and `--summary-file` before sending any request. A length rejection creates no draft and changes no track; fix the local text before retrying. Omitted summary fields preserve the existing story; an explicit empty summary clears it. Other network/partial-upload failures still require the recovery steps below.
+
 ```sh
+talkoda story check ./story.md
 talkoda tracks list --query '主题' --tag ambient --all
 talkoda tags list --query amb
 talkoda charts

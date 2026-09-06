@@ -20,6 +20,10 @@ import {
   metadataFromFlags,
   metadataOptions,
   normalizeTag,
+  measureStory,
+  storyLengthError,
+  STORY_TARGET_CHARACTERS,
+  STORY_MAX_CHARACTERS,
 } from '../lib/metadata.mjs'
 
 const helpZh = `Talkoda CLI — 把对话，谱成歌。
@@ -31,6 +35,7 @@ skills install --agent codex|claude|pi|opencode [--scope user|project] [--force]
 skills show                       输出通用技能说明
 compose init --conversation FILE [--name NAME --output DIRECTORY --title TITLE --bpm 108 --cycles 64]
                                   默认新建 ~/.talkoda/songs/NAME，由当前 AI 完成作曲
+story check [FILE]                本地校验故事简介，默认读取 story.md，无需登录
 render doctor                     检查独立音频渲染环境
 render setup                      安装 Chromium（已有 Chrome 时通常不需要）
 render --source FILE --output FILE.mp3 --bpm N --cycles N [--browser PATH]
@@ -79,6 +84,7 @@ favorites add|remove ID            收藏 / 取消收藏
           --source-visibility public|private --prompt-visibility public|private
           --tags "标签1,标签2" --copyright-notice TEXT
 compose init 也支持以上生成来源、可见性、标签与版权资料选项。
+story/summary 默认目标 ${STORY_TARGET_CHARACTERS} 字符，硬上限 ${STORY_MAX_CHARACTERS}；按 trim 后 UTF-16 长度计数，超限在请求前拒绝。
 通用选项: --lang en|zh（默认系统语言） --url ORIGIN --json --help --version
 环境变量: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_HOME, TALKODA_CONFIG_FILE
 默认根目录: ~/.talkoda；配置文件: ~/.talkoda/config.json
@@ -95,6 +101,7 @@ skills install --agent codex|claude|pi|opencode [--scope user|project] [--force]
 skills show                       Print the portable skill instructions
 compose init --conversation FILE [--name NAME --output DIRECTORY --title TITLE --bpm 108 --cycles 64]
                                   Create a fresh workspace in ~/.talkoda/songs/NAME by default
+story check [FILE]                Check the public story locally; defaults to story.md, no login
 render doctor                     Check the isolated audio renderer
 render setup                      Install Chromium if Chrome is unavailable
 render --source FILE --output FILE.mp3 --bpm N --cycles N [--browser PATH]
@@ -143,6 +150,7 @@ Metadata: --title --summary --summary-file --genre --cover blue|mint|peach|viole
           --source-visibility public|private --prompt-visibility public|private
           --tags "tag1,tag2" --copyright-notice TEXT
 compose init also accepts the generation, visibility, tags and copyright metadata above.
+Story/summary target: ${STORY_TARGET_CHARACTERS} characters; hard maximum: ${STORY_MAX_CHARACTERS}, counted as trimmed UTF-16 length; oversized input is rejected before requests.
 Global options: --lang en|zh (system locale by default) --url ORIGIN --json --help --version
 Environment: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_HOME, TALKODA_CONFIG_FILE
 Default home: ~/.talkoda; configuration: ~/.talkoda/config.json
@@ -234,6 +242,24 @@ async function main() {
   }
   if (flags.help || !args.length) {
     console.log(getLanguage() === 'zh' ? helpZh : helpEn)
+    return
+  }
+  if (args[0] === 'story') {
+    if (
+      args[1] !== 'check' ||
+      args.length > 3 ||
+      Object.keys(flags).some((key) => !['lang', 'json'].includes(key))
+    )
+      throw new Error(
+        t(
+          '使用 story check [FILE]，默认文件为 story.md。',
+          'Use story check [FILE]; the default file is story.md.',
+        ),
+      )
+    const file = resolve(args[2] ?? 'story.md')
+    const result = { file, ...measureStory(await readFile(file, 'utf8')) }
+    console.log(JSON.stringify(result, null, flags.json ? 0 : 2))
+    if (!result.valid) throw storyLengthError(result.characters)
     return
   }
   if (args[0] === 'play') {

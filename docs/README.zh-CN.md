@@ -15,7 +15,7 @@ Codex、Claude Code、pi 或 OpenCode 负责理解指定会话并创作原创 St
 需要 Node.js 22.12+，推荐 Node.js 24。
 
 ```sh
-npm install --global https://talkoda.com/cli/talkoda-cli-0.4.0.tgz
+npm install --global https://talkoda.com/cli/talkoda-cli-0.4.1.tgz
 talkoda --version
 ```
 
@@ -97,6 +97,20 @@ talkoda render --source ./song.strudel.js --output ./song.mp3 --bpm 108 --cycles
 Ubuntu 等启用 AppArmor 限制的系统，优先使用系统安装的 Google Chrome；CLI 在 Linux 上会优先检测它。下载版 Chromium 可能需要额外的沙箱配置，详见 [Chromium 官方说明](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md)。
 
 只渲染你在当前任务中编写或审阅过的源码。临时渲染上下文并不是任意恶意 JavaScript 的通用安全沙箱；源码不会在已登录的 Talkoda 网站或 Node.js 中执行。
+
+## 故事简介长度
+
+`story.md` 会通过 `--summary-file` 上传为作品 `summary`。**默认目标 1200 字符以内，硬上限 2000**；无需凑字数，较短也可以。保留母题、关键转折和音乐映射，长篇创作笔记可另存本地文件。
+
+```sh
+talkoda story check ./story.md
+```
+
+此命令无需登录，不发送网络请求，也不改写文件；省略文件名时检查当前目录的 `story.md`。计数与服务端一致，等于 `text.trim().length`：去掉首尾空白后按 UTF-16 计数，内部空格、换行和标点都计入，emoji 通常占 2。不要用词数、文件字节数或肉眼估算代替检查。
+
+JSON 显示 `characters`、默认 `target: 1200`、`max: 2000`、`unit: "utf16"`、`withinTarget` 和 `valid`。超过目标但未超过 2000 仍可提交（退出码 0）；超过 2000 则退出码 1。超限时一次压缩回约 1200 字符后重新检查，避免反复试探 2000 的边界。
+
+CLI 在创建、更新和新建/续传上传请求前，也会自动检查 `--summary` / `--summary-file`。超限会显示实际长度并停止，不创建草稿、不修改作品、不静默截断正文。省略 summary 保留原值，明确传空字符串可清除。这里的限制只适用于公开 story/summary，原始会话和 prompt 沿用各自的限制。
 
 ## 终端播放
 

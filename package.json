@@ -1,6 +1,6 @@
 {
   "name": "@talkoda/cli",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "The command-line client for Talkoda conversation music.",
   "type": "module",
   "license": "AGPL-3.0-only",

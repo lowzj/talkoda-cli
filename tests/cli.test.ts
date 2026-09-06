@@ -386,6 +386,152 @@ describe('CLI operations', () => {
   })
 })
 
+describe('story length preflight', () => {
+  const mutations = [
+    {
+      label: 'create',
+      args: ['tracks', 'create', '--title', 'Story limit test'],
+      method: 'POST',
+      path: '/api/tracks',
+    },
+    {
+      label: 'update',
+      args: ['tracks', 'update', 'song-1'],
+      method: 'PATCH',
+      path: '/api/tracks/song-1',
+    },
+    {
+      label: 'new upload',
+      args: [
+        'tracks',
+        'upload',
+        '--title',
+        'Story limit test',
+        '--source',
+        'song.js',
+        '--audio',
+        'song.m4a',
+        '--publish',
+      ],
+      method: 'POST',
+      path: '/api/tracks',
+    },
+    {
+      label: 'resumed upload',
+      args: [
+        'tracks',
+        'upload',
+        '--id',
+        'song-1',
+        '--source',
+        'song.js',
+        '--audio',
+        'song.m4a',
+        '--publish',
+      ],
+      method: 'PATCH',
+      path: '/api/tracks/song-1',
+    },
+  ]
+  const inputs = mutations.flatMap((mutation) =>
+    ['--summary', '--summary-file'].map((option) => ({ ...mutation, option })),
+  )
+  // Internal CRLF remains two code units and each emoji is a surrogate pair.
+  // Surrounding whitespace is excluded, matching the server's .trim().length.
+  const boundary = '🎵'.repeat(998) + '\r\n' + 'ab'
+
+  beforeEach(async () => {
+    await writeFile(join(directory, 'song.js'), 'note("c4").s("sine")')
+    await writeFile(join(directory, 'song.m4a'), new Uint8Array([9, 8, 7]))
+  })
+
+  it.each(inputs)(
+    'rejects an oversized $option for $label before any HTTP request, in both languages',
+    async ({ args, option }) => {
+      const summary = ` \r\n${boundary}x\r\n `
+      expect(summary.trim().length).toBe(2001)
+      expect(Array.from(summary.trim()).length).toBeLessThan(2000)
+      await writeFile(join(directory, 'story.txt'), summary)
+      const value = option === '--summary-file' ? 'story.txt' : summary
+      for (const language of ['zh', 'en']) {
+        const result = await run([...args, option, value, '--lang', language])
+        expect(result.code, result.stderr).toBe(1)
+        expect(requests).toEqual([])
+        for (const count of ['2001', '2000', '1200']) expect(result.stderr).toContain(count)
+        if (language === 'zh') expect(result.stderr).toMatch(/(未|没有|不会).*(请求|发送)/u)
+        else {
+          expect(result.stderr).toMatch(/no (?:\w+\s+)*requests?/iu)
+          expect(result.stderr).not.toMatch(/[\u3400-\u9fff]/u)
+        }
+      }
+    },
+  )
+
+  it.each(inputs)(
+    'accepts exactly 2000 trimmed UTF-16 units through $option for $label',
+    async ({ args, option, method, path }) => {
+      const summary = ` \r\n${boundary}\r\n `
+      expect(summary.length).toBeGreaterThan(2000)
+      expect(summary.trim().length).toBe(2000)
+      await writeFile(join(directory, 'story.txt'), summary)
+      const result = await run([
+        ...args,
+        option,
+        option === '--summary-file' ? 'story.txt' : summary,
+      ])
+      expect(result.code, result.stderr).toBe(0)
+      expect(
+        requests.filter((request) => request.method === method && request.path === path),
+      ).toHaveLength(1)
+      expect(requests[0]).toMatchObject({ method, path, body: { summary: boundary } })
+      if (args[1] === 'upload')
+        expect(requests.map((request) => request.method)).toEqual([method, 'PUT', 'POST'])
+      else expect(requests).toHaveLength(1)
+    },
+  )
+
+  it('leaves summary absent on partial edits and upload resumes when it was not supplied', async () => {
+    const updated = await run(['tracks', 'update', 'song-1', '--title', 'Only rename'])
+    expect(updated.code, updated.stderr).toBe(0)
+    expect(requests[0]!.body).toEqual({ title: 'Only rename' })
+    expect(JSON.parse(updated.stdout).track.summary).toBe(track.summary)
+    requests = []
+    const resumed = await run([
+      'tracks',
+      'upload',
+      '--id',
+      'song-1',
+      '--source',
+      'song.js',
+      '--audio',
+      'song.m4a',
+    ])
+    expect(resumed.code, resumed.stderr).toBe(0)
+    expect(requests.map((request) => [request.method, request.path])).toEqual([
+      ['PUT', '/api/tracks/song-1/files'],
+    ])
+    expect(JSON.parse(resumed.stdout).track.summary).toBe(track.summary)
+  })
+
+  it.each(['--summary', '--summary-file'])(
+    'clears an existing summary when %s is explicitly empty',
+    async (option) => {
+      await writeFile(join(directory, 'empty-story.txt'), ' \r\n\t ')
+      const result = await run([
+        'tracks',
+        'update',
+        'song-1',
+        option,
+        option === '--summary-file' ? 'empty-story.txt' : '',
+      ])
+      expect(result.code, result.stderr).toBe(0)
+      expect(requests).toHaveLength(1)
+      expect(requests[0]).toMatchObject({ method: 'PATCH', body: { summary: '' } })
+      expect(JSON.parse(result.stdout).track.summary).toBe('')
+    },
+  )
+})
+
 describe('community metadata and language', () => {
   it('sends only supplied metadata, normalizes tags and keeps prompt input explicit', async () => {
     await writeFile(join(directory, 'prompt.txt'), 'Compose a warm reprise.\nKeep the ending open.')

@@ -15,12 +15,14 @@ Install from your Agent conversation:
 > Read https://talkoda.com/install.md and install Talkoda CLI and the skill for this Agent.
 
 ```sh
-npm install --global https://talkoda.com/cli/talkoda-cli-0.4.0.tgz
+npm install --global https://talkoda.com/cli/talkoda-cli-0.4.1.tgz
 talkoda skills install --agent codex
 talkoda --help
 ```
 
 Use `talkoda compose init --conversation ./conversation.md --name my-song` to start a fresh workspace, then ask your Agent to compose and render. Play the resulting audio with `talkoda play ./song.mp3`. Use the returned `directory`; repeated names receive a suffix.
+
+Public story: target **1200 characters**, hard limit **2000** (trimmed UTF-16 length). Run `talkoda story check ./story.md` before uploading; oversized stories are rejected locally without creating a draft.
 
 Defaults: `~/.talkoda/config.json` for configuration and `~/.talkoda/songs/{name}` for songs. Each person connects their own account with `talkoda auth login`; raw conversations stay local.
 
