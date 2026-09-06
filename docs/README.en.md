@@ -150,7 +150,7 @@ talkoda tracks share TRACK_ID
 talkoda tracks download TRACK_ID --kind source --output ./download.strudel.js
 ```
 
-Likes contribute to the seven-day new-release chart; favorites are private and independent. `tracks share` returns the canonical track URL and X, Facebook, LinkedIn, Telegram, WhatsApp and Weibo URLs without posting. Non-public tracks receive no external sharing URLs. The website also provides a WeChat QR code.
+Likes contribute to the seven-day new-release chart; favorites are private and independent. `tracks share` returns the canonical track URL and X, Facebook, LinkedIn, Telegram, WhatsApp and Weibo URLs without posting. Non-public tracks receive no external sharing URLs. The website offers a copy-link action and direct social-platform icon links for public tracks.
 
 Real player integrations can report `tracks record-play TRACK_ID --event-id UUID --seconds N` after at least five seconds of actual playback. Use a new UUID for a new play, and the same UUID for retries. The server counts only public tracks, excludes author previews and deduplicates a viewer/track within 30 minutes. Downloads, HEAD and metadata requests do not count.
 
