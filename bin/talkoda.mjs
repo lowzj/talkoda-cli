@@ -84,7 +84,7 @@ favorites add|remove ID            收藏 / 取消收藏
           --source-visibility public|private --prompt-visibility public|private
           --tags "标签1,标签2" --copyright-notice TEXT
 compose init 也支持以上生成来源、可见性、标签与版权资料选项。
-story/summary 默认目标 ${STORY_TARGET_CHARACTERS} 字符，硬上限 ${STORY_MAX_CHARACTERS}；按 trim 后 UTF-16 长度计数，超限在请求前拒绝。
+story/summary 默认目标 ${STORY_TARGET_CHARACTERS} 字符，硬上限 ${STORY_MAX_CHARACTERS}；按 trim 后 Unicode 码点计数，超限在请求前拒绝。
 通用选项: --lang en|zh（默认系统语言） --url ORIGIN --json --help --version
 环境变量: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_HOME, TALKODA_CONFIG_FILE
 默认根目录: ~/.talkoda；配置文件: ~/.talkoda/config.json
@@ -150,7 +150,7 @@ Metadata: --title --summary --summary-file --genre --cover blue|mint|peach|viole
           --source-visibility public|private --prompt-visibility public|private
           --tags "tag1,tag2" --copyright-notice TEXT
 compose init also accepts the generation, visibility, tags and copyright metadata above.
-Story/summary target: ${STORY_TARGET_CHARACTERS} characters; hard maximum: ${STORY_MAX_CHARACTERS}, counted as trimmed UTF-16 length; oversized input is rejected before requests.
+Story/summary target: ${STORY_TARGET_CHARACTERS} characters; hard maximum: ${STORY_MAX_CHARACTERS}, counted as trimmed Unicode code points; oversized input is rejected before requests.
 Global options: --lang en|zh (system locale by default) --url ORIGIN --json --help --version
 Environment: TALKODA_API_TOKEN, TALKODA_API_URL, TALKODA_HOME, TALKODA_CONFIG_FILE
 Default home: ~/.talkoda; configuration: ~/.talkoda/config.json

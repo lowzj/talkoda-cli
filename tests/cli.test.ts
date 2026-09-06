@@ -436,9 +436,9 @@ describe('story length preflight', () => {
   const inputs = mutations.flatMap((mutation) =>
     ['--summary', '--summary-file'].map((option) => ({ ...mutation, option })),
   )
-  // Internal CRLF remains two code units and each emoji is a surrogate pair.
-  // Surrounding whitespace is excluded, matching the server's .trim().length.
-  const boundary = '🎵'.repeat(998) + '\r\n' + 'ab'
+  // Internal CRLF counts as two code points; an emoji counts as one despite its
+  // UTF-16 surrogate pair. The server excludes surrounding whitespace first.
+  const boundary = '🎵'.repeat(1996) + '\r\n' + 'ab'
 
   beforeEach(async () => {
     await writeFile(join(directory, 'song.js'), 'note("c4").s("sine")')
@@ -449,8 +449,8 @@ describe('story length preflight', () => {
     'rejects an oversized $option for $label before any HTTP request, in both languages',
     async ({ args, option }) => {
       const summary = ` \r\n${boundary}x\r\n `
-      expect(summary.trim().length).toBe(2001)
-      expect(Array.from(summary.trim()).length).toBeLessThan(2000)
+      expect(Array.from(summary.trim()).length).toBe(2001)
+      expect(summary.trim().length).toBeGreaterThan(2000)
       await writeFile(join(directory, 'story.txt'), summary)
       const value = option === '--summary-file' ? 'story.txt' : summary
       for (const language of ['zh', 'en']) {
@@ -468,11 +468,11 @@ describe('story length preflight', () => {
   )
 
   it.each(inputs)(
-    'accepts exactly 2000 trimmed UTF-16 units through $option for $label',
+    'accepts exactly 2000 trimmed Unicode code points through $option for $label',
     async ({ args, option, method, path }) => {
       const summary = ` \r\n${boundary}\r\n `
-      expect(summary.length).toBeGreaterThan(2000)
-      expect(summary.trim().length).toBe(2000)
+      expect(summary.trim().length).toBeGreaterThan(2000)
+      expect(Array.from(summary.trim()).length).toBe(2000)
       await writeFile(join(directory, 'story.txt'), summary)
       const result = await run([
         ...args,

@@ -72,9 +72,9 @@ For a native conversation already read by the Agent, it can write a private crea
 talkoda story check ./story.md
 ```
 
-The checker defaults to `story.md` in the current directory and runs without credentials or network access. It never rewrites the file. Counting matches the API's `text.trim().length`: UTF-16 units after removing leading/trailing whitespace. Internal spaces, line breaks and punctuation count; most emoji count as two. This is not a word, byte or Unicode-code-point count.
+The checker defaults to `story.md` in the current directory and runs without credentials or network access. It never rewrites the file. Counting matches the API's Unicode-code-point count: `Array.from(text.trim()).length` after removing leading/trailing whitespace. Internal spaces, line breaks and punctuation count; combined emoji may contain several code points. This is not a word, byte, UTF-16-unit or visual-grapheme count.
 
-JSON reports `characters`, `target: 1200`, `max: 2000`, `unit: "utf16"`, `withinTarget` and `valid`. Above-target stories up to 2000 remain valid (exit 0). Above 2000 exits 1; compress back toward 1200 in one pass and recheck instead of repeatedly submitting near-limit edits.
+JSON reports `characters`, `target: 1200`, `max: 2000`, `unit: "unicode-code-points"`, `withinTarget` and `valid`. Above-target stories up to 2000 remain valid (exit 0). Above 2000 exits 1; compress back toward 1200 in one pass and recheck instead of repeatedly submitting near-limit edits.
 
 Create, update and both new/resumed upload commands also validate `--summary` / `--summary-file` before requests. Oversized text produces an actual-length error without creating drafts, changing tracks, or silently truncating text. Omitting summary preserves it; explicitly empty summary clears it. These limits apply only to the public story/summary, not the original conversation or private prompt.
 

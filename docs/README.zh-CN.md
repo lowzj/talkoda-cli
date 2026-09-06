@@ -106,9 +106,9 @@ Ubuntu 等启用 AppArmor 限制的系统，优先使用系统安装的 Google C
 talkoda story check ./story.md
 ```
 
-此命令无需登录，不发送网络请求，也不改写文件；省略文件名时检查当前目录的 `story.md`。计数与服务端一致，等于 `text.trim().length`：去掉首尾空白后按 UTF-16 计数，内部空格、换行和标点都计入，emoji 通常占 2。不要用词数、文件字节数或肉眼估算代替检查。
+此命令无需登录，不发送网络请求，也不改写文件；省略文件名时检查当前目录的 `story.md`。计数与服务端一致，等于 `Array.from(text.trim()).length`：去掉首尾空白后按 Unicode 码点计数，内部空格、换行和标点都计入，组合 emoji 可能占多个码点。不要用词数、文件字节数或肉眼估算代替检查。
 
-JSON 显示 `characters`、默认 `target: 1200`、`max: 2000`、`unit: "utf16"`、`withinTarget` 和 `valid`。超过目标但未超过 2000 仍可提交（退出码 0）；超过 2000 则退出码 1。超限时一次压缩回约 1200 字符后重新检查，避免反复试探 2000 的边界。
+JSON 显示 `characters`、默认 `target: 1200`、`max: 2000`、`unit: "unicode-code-points"`、`withinTarget` 和 `valid`。超过目标但未超过 2000 仍可提交（退出码 0）；超过 2000 则退出码 1。超限时一次压缩回约 1200 字符后重新检查，避免反复试探 2000 的边界。
 
 CLI 在创建、更新和新建/续传上传请求前，也会自动检查 `--summary` / `--summary-file`。超限会显示实际长度并停止，不创建草稿、不修改作品、不静默截断正文。省略 summary 保留原值，明确传空字符串可清除。这里的限制只适用于公开 story/summary，原始会话和 prompt 沿用各自的限制。
 

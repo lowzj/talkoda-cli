@@ -36,10 +36,10 @@ describe('offline story preflight', () => {
     expect(result.status, result.stderr).toBe(0)
     expect(JSON.parse(result.stdout)).toEqual({
       file,
-      characters: 6,
+      characters: 5,
       target: 1200,
       max: 2000,
-      unit: 'utf16',
+      unit: 'unicode-code-points',
       withinTarget: true,
       valid: true,
     })
@@ -62,7 +62,7 @@ describe('offline story preflight', () => {
   it.each(['en', 'zh'])(
     'rejects oversized emoji text with useful %s counts and no truncation',
     async (lang) => {
-      const text = '🎵'.repeat(1000) + 'x'
+      const text = '🎵'.repeat(2000) + 'x'
       const file = join(directory, 'story.md')
       await writeFile(file, text)
       const result = run(['story', 'check'], lang)
@@ -96,7 +96,7 @@ describe('offline story preflight', () => {
       const result = run(['compose', 'init', '--conversation', 'conversation.md'], lang)
       expect(result.status, result.stderr).toBe(0)
       const brief = await readFile(JSON.parse(result.stdout).brief, 'utf8')
-      for (const value of ['1200', '2000', 'UTF-16', 'talkoda story check story.md'])
+      for (const value of ['1200', '2000', 'Unicode', 'talkoda story check story.md'])
         expect(brief).toContain(value)
     },
   )
