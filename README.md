@@ -1,29 +1,46 @@
-# Talkoda CLI
+<p align="center">
+  <img src="docs/assets/talkoda-logo.png" alt="Talkoda logo" width="112" height="112" />
+</p>
 
-**/tɔːˈkoʊdə/** · 把对话，谱成歌。 Turn conversations into music.
+<h1 align="center">Talkoda CLI</h1>
 
-[中文文档](docs/README.zh-CN.md) · [English documentation](docs/README.en.md) · [Talkoda](https://talkoda.com)
+<p align="center">把对话，谱成歌。<br />Turn conversations into music.</p>
 
-The standalone CLI and portable skill for Codex, Claude Code, pi and OpenCode. Your Agent composes original Strudel music; Talkoda renders, plays, uploads and manages it.
+<p align="center">
+  <a href="https://talkoda.com">Talkoda</a> ·
+  <a href="docs/README.zh-CN.md">中文文档</a> ·
+  <a href="docs/README.en.md">English docs</a>
+</p>
 
-在 Agent 对话中安装：
+为 **Codex、Claude Code、pi 和 OpenCode** 提供的 CLI 与 Skill。Agent 作曲，Talkoda 负责渲染、播放和发布；无需额外的 LLM API Key，原始对话保留在本地。
 
-> 请阅读 https://talkoda.com/install.md，为当前 Agent 安装 Talkoda CLI 和 Skill。
+## 两句话开始
 
-Install from your Agent conversation:
+在 Agent 对话中依次发送：
 
-> Read https://talkoda.com/install.md and install Talkoda CLI and the skill for this Agent.
+**1. 安装**
+
+> 阅读 https://talkoda.com/install.md，安装 Talkoda CLI 和技能。
+
+**2. 创作并发布**
+
+> 用 talkoda 技能，把当前对话谱成音乐并公开发布。
+
+只想先试听，可将“公开发布”改为“保存到本地”。[English quick start →](docs/README.en.md#quick-start)
+
+## 手动安装
+
+需要 Node.js 22.12+（推荐 24），以下以 Codex 为例：
 
 ```sh
 npm install --global https://talkoda.com/cli/talkoda-cli-0.4.1.tgz
 talkoda skills install --agent codex
-talkoda --help
 ```
 
-Use `talkoda compose init --conversation ./conversation.md --name my-song` to start a fresh workspace, then ask your Agent to compose and render. Play the resulting audio with `talkoda play ./song.mp3`. Use the returned `directory`; repeated names receive a suffix.
+其他 Agent 使用 `claude`、`pi` 或 `opencode`。安装后重新加载技能；首次发布前，在终端运行 `talkoda auth login` 连接自己的账号。
 
-Public story: target **1200 characters**, hard limit **2000** (trimmed Unicode code points). Run `talkoda story check ./story.md` before uploading; oversized stories are rejected locally without creating a draft.
+完整命令、渲染与配置见[中文文档](docs/README.zh-CN.md)或 [English docs](docs/README.en.md)。
 
-Defaults: `~/.talkoda/config.json` for configuration and `~/.talkoda/songs/{name}` for songs. Each person connects their own account with `talkoda auth login`; raw conversations stay local.
+---
 
-[AGPL-3.0-only](LICENSE). User works and private conversations are not covered by the CLI code license automatically.
+[AGPL-3.0-only](LICENSE) · [Logo 署名](docs/assets/NOTICE.txt)。代码许可不自动适用于用户作品与私密对话。

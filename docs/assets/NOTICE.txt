@@ -1,0 +1,10 @@
+Talkoda logo — reference attribution
+
+Talkoda logo uses the upright Solar music-note-2-bold icon by 480 Design (CC BY 4.0), https://github.com/480-Design/Solar-Icon-Set ; the note is recolored and scaled without rotation. Rounded brackets are redrawn from the original talkoda-icon.svg reference, based on Google Material Symbols code-rounded (Apache-2.0), https://github.com/google/material-design-icons . Color, spacing and vertical motion are adapted for Talkoda. Attribution and licenses: https://talkoda.com/brand/NOTICE.txt .
+
+Reference licenses:
+Google Material Symbols: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
+Solar icons, 480 Design: Creative Commons Attribution 4.0 International — https://creativecommons.org/licenses/by/4.0/
+
+This version combines an upright Solar music-note-2-bold with redrawn rounded brackets, changes color and spacing, and animates the note vertically without rotation.
+Static and animated artwork share src/shared/brand.json; motion is in src/client/styles/brand-mark.css.

@@ -20,6 +20,8 @@ const expected = new Set([
   'lib/playback.mjs',
   'docs/README.zh-CN.md',
   'docs/README.en.md',
+  'docs/assets/talkoda-logo.png',
+  'docs/assets/NOTICE.txt',
   'skills/talkoda/SKILL.md',
   'skills/talkoda/references/cli.md',
   'skills/talkoda/references/music.md',
