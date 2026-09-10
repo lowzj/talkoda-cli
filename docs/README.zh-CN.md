@@ -12,16 +12,18 @@ Codex、Claude Code、pi 或 OpenCode 负责理解指定会话并创作原创 St
 
 ## 安装
 
-需要 Node.js 22.12+，推荐 Node.js 24。从 [npm 官方仓库](https://www.npmjs.com/package/@talkoda/cli)安装当前版本 **0.4.2**：
+需要 Node.js 22.12+，推荐 Node.js 24。包已发布到 [npm 官方仓库](https://www.npmjs.com/package/@talkoda/cli)，安装最新版本：
 
 ```sh
-npm install --global @talkoda/cli@0.4.2 --registry=https://registry.npmjs.org/
+npm i -g @talkoda/cli
 talkoda --version
 ```
 
-预期版本为 `0.4.2`，终端命令为 `talkoda`。npm 包包含 CLI、四类 Agent 共用的技能与许可证；安装后按下一节为当前 Agent 安装技能。
+当前版本为 `0.4.2`，以 `talkoda --version` 的实际输出为准，终端命令为 `talkoda`。npm 包包含 CLI、四类 Agent 共用的技能与许可证；安装后按下一节为当前 Agent 安装技能。
 
-更新到 npm 最新版本可运行 `npm install --global @talkoda/cli@latest --registry=https://registry.npmjs.org/`，然后重新检查版本。更新 CLI 不会自动替换已经安装到 Agent 目录的技能；先保留本地定制，再用对应的 `talkoda skills install --agent AGENT --force` 更新。
+需要固定版本时用 `npm i -g @talkoda/cli@0.4.2`。npm 使用当前配置的仓库；如果镜像尚未同步，可用 `npm i -g @talkoda/cli --registry=https://registry.npmjs.org` 临时指定官方源。
+
+更新到 npm 最新版本可运行 `npm i -g @talkoda/cli`，然后重新检查版本。更新 CLI 不会自动替换已经安装到 Agent 目录的技能；先保留本地定制，再用对应的 `talkoda skills install --agent AGENT --force` 更新。
 
 如全局目录不可写，优先使用现有的用户级 Node 环境。macOS/Linux 也可添加 `--prefix "$HOME/.local"`，并将 `$HOME/.local/bin` 加入 PATH；不需要使用 sudo 或修改系统 npm 配置。[官网安装说明](https://talkoda.com/install.md)同时提供带 SHA-256 的归档安装方式。
 

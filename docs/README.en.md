@@ -18,16 +18,18 @@ Replace “publish” with “save as a draft” when you want to review it firs
 
 ## Install and connect your Agent
 
-Requires Node.js 22.12 or later; Node.js 24 is recommended. Install the current release, **0.4.2**, from the [official npm registry](https://www.npmjs.com/package/@talkoda/cli):
+Requires Node.js 22.12 or later; Node.js 24 is recommended. The package is published on the [official npm registry](https://www.npmjs.com/package/@talkoda/cli). Install the latest release:
 
 ```sh
-npm install --global @talkoda/cli@0.4.2 --registry=https://registry.npmjs.org/
+npm i -g @talkoda/cli
 talkoda --version
 ```
 
-Expected version: `0.4.2`. The executable is `talkoda`. The npm package includes the CLI, the shared Agent skill, and the license. Install the skill for your current Agent using the table below.
+The current release is `0.4.2`; check the actual output of `talkoda --version`. The executable is `talkoda`. The npm package includes the CLI, the shared Agent skill, and the license. Install the skill for your current Agent using the table below.
 
-To update, run `npm install --global @talkoda/cli@latest --registry=https://registry.npmjs.org/` and check the version again. Updating the CLI does not replace skills already installed in Agent directories; preserve local customizations before reinstalling the selected skill with `--force`.
+To pin this release, use `npm i -g @talkoda/cli@0.4.2`. npm uses your configured registry. If a mirror has not synchronized the package, use `npm i -g @talkoda/cli --registry=https://registry.npmjs.org` for this installation.
+
+To update, run `npm i -g @talkoda/cli` and check the version again. Updating the CLI does not replace skills already installed in Agent directories; preserve local customizations before reinstalling the selected skill with `--force`.
 
 If the global prefix is not writable, prefer your existing user-managed Node environment. On macOS/Linux, you can add `--prefix "$HOME/.local"` and put `$HOME/.local/bin` on PATH without sudo or changes to system npm settings. The [website installation guide](https://talkoda.com/install.md) also provides a release archive and SHA-256 verification instructions.
 
