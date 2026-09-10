@@ -18,12 +18,18 @@ Replace “publish” with “save as a draft” when you want to review it firs
 
 ## Install and connect your Agent
 
-Requires Node.js 22.12 or later; Node.js 24 is recommended.
+Requires Node.js 22.12 or later; Node.js 24 is recommended. Install the current release, **0.4.2**, from the [official npm registry](https://www.npmjs.com/package/@talkoda/cli):
 
 ```sh
-npm install --global https://talkoda.com/cli/talkoda-cli-0.4.1.tgz
+npm install --global @talkoda/cli@0.4.2 --registry=https://registry.npmjs.org/
 talkoda --version
 ```
+
+Expected version: `0.4.2`. The executable is `talkoda`. The npm package includes the CLI, the shared Agent skill, and the license. Install the skill for your current Agent using the table below.
+
+To update, run `npm install --global @talkoda/cli@latest --registry=https://registry.npmjs.org/` and check the version again. Updating the CLI does not replace skills already installed in Agent directories; preserve local customizations before reinstalling the selected skill with `--force`.
+
+If the global prefix is not writable, prefer your existing user-managed Node environment. On macOS/Linux, you can add `--prefix "$HOME/.local"` and put `$HOME/.local/bin` on PATH without sudo or changes to system npm settings. The [website installation guide](https://talkoda.com/install.md) also provides a release archive and SHA-256 verification instructions.
 
 | Agent       | Skill installation                        | Default user skill directory         |
 | ----------- | ----------------------------------------- | ------------------------------------ |
@@ -169,5 +175,14 @@ npm ci
 npm run check
 npm run pack:release
 ```
+
+For a maintainer release, first synchronize the version in `package.json`, `package-lock.json`, and installation documentation. Run the checks above and review the file allowlist and SHA-256 reported by `pack:release`. Publish that reviewed archive with an npm account allowed to publish under `@talkoda` (replace the filename with the actual release):
+
+```sh
+npm publish ./dist/talkoda-cli-0.4.2.tgz --access public --registry=https://registry.npmjs.org/
+npm view @talkoda/cli@0.4.2 version dist.integrity --registry=https://registry.npmjs.org/
+```
+
+`publishConfig` selects the official npm registry and public access. Published versions cannot be overwritten. Use the same tgz for the website fallback archive, and synchronize `public/cli/latest.json`, its checksum, `public/install.md`, and the website's pinned dependency.
 
 Tests use local synthetic fixtures, not production credentials or test publications. Code is [AGPL-3.0-only](../LICENSE); dependencies retain their licenses. User works and private conversations do not automatically inherit the CLI's code license. Talkoda is not an official Strudel service.

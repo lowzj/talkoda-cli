@@ -1,9 +1,14 @@
 {
   "name": "@talkoda/cli",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "The command-line client for Talkoda conversation music.",
   "type": "module",
   "license": "AGPL-3.0-only",
+  "homepage": "https://talkoda.com",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "bin": {
     "talkoda": "bin/talkoda.mjs"
   },
